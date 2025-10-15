@@ -12,6 +12,7 @@ interface TicketCardProps {
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
   onStatusChange?: (id: string, newStatus: 'open' | 'in_progress' | 'closed') => void;
+  onCancel?: (id: string) => void;
 }
 
 const statusConfig = {
@@ -26,7 +27,7 @@ const priorityConfig = {
   high: { label: 'High', color: 'bg-destructive/20 text-destructive' },
 };
 
-const TicketCard = ({ id, title, description, status, priority, createdAt, onStatusChange }: TicketCardProps) => {
+const TicketCard = ({ id, title, description, status, priority, createdAt, onStatusChange, onCancel }: TicketCardProps) => {
   const StatusIcon = statusConfig[status].icon;
 
   const handleStatusChange = () => {

@@ -6,8 +6,10 @@ import TicketCard from "@/components/TicketCard";
 import TicketFilters from "@/components/TicketFilters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LogOut } from "lucide-react";
+import { LogOut, Send, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Ticket {
   id: string;
@@ -18,11 +20,23 @@ interface Ticket {
   created_at: string;
 }
 
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+}
+
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'in_progress' | 'closed'>('all');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { id: '1', text: "Hello! I'm your KAI assistant. How can I help you today?", sender: 'bot', timestamp: new Date() }
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
     // Check for existing session
@@ -94,9 +108,60 @@ const Index = () => {
     }
   };
 
+  const handleCancelTicket = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTickets(tickets.filter(ticket => ticket.id !== id));
+
+      toast({
+        title: "Success",
+        description: "Ticket cancelled successfully",
+      });
+    } catch (error) {
+      console.error('Error cancelling ticket:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel ticket",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setTickets([]);
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: inputMessage,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage("");
+
+    // Simulate bot response
+    setTimeout(() => {
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm here to help! I can assist you with creating tickets, checking ticket status, and answering common questions about our support system.",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+    }, 1000);
   };
 
   const filteredTickets = activeFilter === 'all' 
@@ -125,16 +190,16 @@ const Index = () => {
             <div className="space-y-8">
               <div className="inline-block">
                 <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20">
-                  AI-Powered Support
+                  Build by IT Department
                 </span>
               </div>
               
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient">
-                  Smart Ticketing
+                  KFL Manpower Agency
                 </span>
                 <br />
-                <span className="text-foreground">Made Simple</span>
+                <span className="text-foreground">Ticketing System</span>
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
@@ -163,8 +228,8 @@ const Index = () => {
             {/* Right Content - Spline Robot */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
-              <div className="relative h-[500px] rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
-                <SplineViewer url="https://prod.spline.design/LlkWhD4yDvG5WXqf/scene.splinecode" className="w-full h-full" />
+              <div className="relative h-[400px] rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+                <SplineViewer url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[500px]" />
               </div>
             </div>
           </div>
@@ -176,9 +241,13 @@ const Index = () => {
             {[
               { title: 'Real-time Updates', description: 'Get instant notifications on ticket status changes' },
               { title: 'Priority Management', description: 'Organize tickets by urgency and importance' },
-              { title: 'AI Assistant', description: 'Let our robot help you resolve issues faster' },
+              { title: 'KAI Assistant', description: 'Let our robot help you resolve issues faster' },
             ].map((feature, i) => (
-              <div key={i} className="p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all group">
+              <div 
+                key={i} 
+                className="p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all group cursor-pointer"
+                onClick={() => feature.title === 'KAI Assistant' && setIsChatOpen(true)}
+              >
                 <h3 className="text-xl font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
                   {feature.title}
                 </h3>
@@ -187,6 +256,93 @@ const Index = () => {
             ))}
           </div>
         </div>
+
+        {/* AI Chat Modal */}
+        <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
+          <DialogContent className="max-w-5xl h-[600px] p-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+              {/* Left side - Chat Interface */}
+              <div className="flex flex-col h-full border-r border-border">
+                <DialogHeader className="p-6 border-b border-border">
+                  <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    KAI Assistant
+                  </DialogTitle>
+                  <p className="text-muted-foreground text-sm">Chat with our AI to get instant help</p>
+                </DialogHeader>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      {message.sender === 'bot' && (
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+                            <img 
+                              src="/avatar.jpg" 
+                              alt="Kai AI Assistant"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                          message.sender === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        <p className="text-sm">{message.text}</p>
+                        <span className="text-xs opacity-70 mt-1 block">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {message.sender === 'user' && (
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+                            <img 
+                              src="/avatar.jpg" 
+                              alt="User"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input */}
+                <form onSubmit={handleSendMessage} className="p-6 border-t border-border">
+                  <div className="flex gap-2">
+                    <Input
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      className="flex-1 bg-background border-border"
+                    />
+                    <Button type="submit" size="icon" className="bg-primary text-primary-foreground">
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Right side - Spline Robot */}
+              <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-6">
+                <div className="relative w-full h-[400px]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
+                  <div className="relative h-full rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+                    <SplineViewer url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[500px]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -198,7 +354,6 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg" />
               <h1 className="text-2xl font-bold text-foreground">TicketBot</h1>
             </div>
             
@@ -220,45 +375,61 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Tickets Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Support Tickets</h2>
-            <p className="text-muted-foreground">Manage and track all your support requests</p>
-          </div>
-          <CreateTicketDialog onTicketCreated={fetchTickets} />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            {/* Tickets Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-2">Support Tickets</h2>
+                <p className="text-muted-foreground">Manage and track all your support requests</p>
+              </div>
+              <CreateTicketDialog onTicketCreated={fetchTickets} />
+            </div>
 
-        {/* Filters */}
-        <div className="mb-8">
-          <TicketFilters 
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-            counts={ticketCounts}
-          />
-        </div>
-
-        {/* Tickets List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filteredTickets.length > 0 ? (
-          <div className="grid gap-4">
-            {filteredTickets.map((ticket) => (
-              <TicketCard
-                key={ticket.id}
-                {...ticket}
-                createdAt={ticket.created_at}
-                onStatusChange={handleStatusChange}
+            {/* Filters */}
+            <div className="mb-8">
+              <TicketFilters 
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                counts={ticketCounts}
               />
-            ))}
+            </div>
+
+            {/* Tickets List */}
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredTickets.length > 0 ? (
+              <div className="grid gap-4">
+                {filteredTickets.map((ticket) => (
+                  <TicketCard
+                    key={ticket.id}
+                    {...ticket}
+                    createdAt={ticket.created_at}
+                    onStatusChange={handleStatusChange}
+                    onCancel={handleCancelTicket}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-card border border-border rounded-2xl">
+                <p className="text-muted-foreground">No tickets found. Create your first ticket to get started!</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-card border border-border rounded-2xl">
-            <p className="text-muted-foreground">No tickets found. Create your first ticket to get started!</p>
+          
+          {/* Right side - Spline Robot */}
+          <div className="hidden lg:block">
+            <div className="relative h-full">
+              <div className="sticky top-48">
+                <div className="relative h-[450px] rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+                  <SplineViewer url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[550px]" />
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </main>
     </div>
   );
