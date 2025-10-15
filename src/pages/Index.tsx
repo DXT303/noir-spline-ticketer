@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import SplineViewer from "@/components/SplineViewer";
@@ -190,7 +191,7 @@ const Index = () => {
             <div className="space-y-8">
               <div className="inline-block">
                 <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20">
-                  Build by IT Department
+                  Build by: IT Department
                 </span>
               </div>
               
@@ -203,7 +204,7 @@ const Index = () => {
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Experience the future of customer support with our AI-assisted ticketing system. 
+                Experience the future of customer support with our KAI-assisted ticketing system. 
                 Fast, efficient, and always available.
               </p>
 
@@ -240,10 +241,11 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { title: 'Real-time Updates', description: 'Get instant notifications on ticket status changes' },
-              { title: 'Priority Management', description: 'Organize tickets by urgency and importance' },
+              { title: 'Common Problems', description: 'Detailed Breakdown with Sub-Categories' },
               { title: 'KAI Assistant', description: 'Let our robot help you resolve issues faster' },
             ].map((feature, i) => (
-              <div 
+              <Link 
+                to={feature.title === 'Common Problems' ? '/category/office' : '#'} 
                 key={i} 
                 className="p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all group cursor-pointer"
                 onClick={() => feature.title === 'KAI Assistant' && setIsChatOpen(true)}
@@ -252,7 +254,7 @@ const Index = () => {
                   {feature.title}
                 </h3>
                 <p className="text-muted-foreground">{feature.description}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -336,7 +338,7 @@ const Index = () => {
                 <div className="relative w-full h-[400px]">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
                   <div className="relative h-full rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
-                    <SplineViewer url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[500px]" />
+                    <SplineViewer key={isChatOpen ? 'chat-spline-active' : 'chat-spline-inactive'} url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[500px]" />
                   </div>
                 </div>
               </div>

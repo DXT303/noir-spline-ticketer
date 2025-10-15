@@ -23,8 +23,12 @@ const SplineViewer = ({ url, className = '' }: SplineViewerProps) => {
     if (containerRef.current && url) {
       const viewer = document.createElement('spline-viewer');
       viewer.setAttribute('url', url);
-      viewer.style.width = '100%';
-      viewer.style.height = '100%';
+      viewer.style.width = '120%';
+      viewer.style.height = '120%';
+      viewer.style.position = 'absolute';
+      viewer.style.top = '50%';
+      viewer.style.left = '50%';
+      viewer.style.transform = 'translate(-50%, -50%)';
       
       containerRef.current.innerHTML = '';
       containerRef.current.appendChild(viewer);
@@ -37,7 +41,7 @@ const SplineViewer = ({ url, className = '' }: SplineViewerProps) => {
     };
   }, [url]);
 
-  return <div ref={containerRef} className={className} />;
+  return <div ref={containerRef} className={`${className} relative overflow-hidden`} />;
 };
 
 export default SplineViewer;

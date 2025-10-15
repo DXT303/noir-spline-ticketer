@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SplineViewer from "@/components/SplineViewer";
 
+
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -266,15 +267,17 @@ const Auth = () => {
               </Tabs>
             </div>
 
-            {/* Right side - Spline Robot */}
-            <div className="hidden lg:block">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
-                <div className="relative h-[400px] rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
-                  <SplineViewer url="https://prod.spline.design/dcFSOfiim5AnfnNt/scene.splinecode" className="w-full h-[500px]" />
-                </div>
-              </div>
-            </div>
+ {/* Right side - Spline Robot */}
+<div className="hidden lg:block h-full min-h-[500px]">
+  <div className="relative h-full">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
+    <div className="relative h-full rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+      <div className="w-full h-full [&_#spline-watermark]:hidden [&_a[href*='spline']]:hidden">
+        <SplineViewer url="https://prod.spline.design/wnAQj5Qta0hVhjL9/scene.splinecode" className="w-full h-full min-h-[500px]" />
+      </div>
+    </div>
+  </div>
+</div>
 
           </div>
         </Card>
