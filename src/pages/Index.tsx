@@ -190,10 +190,12 @@ const Index = () => {
             {/* Left Content */}
             <div className="space-y-8">
               <div className="inline-block">
-                <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20">
-                  Build by: IT Department
-                </span>
-              </div>
+              <Link to="/about">
+  <span className="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer">
+    Build by: IT Department
+  </span>
+</Link>
+</div>
               
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient">
@@ -245,7 +247,7 @@ const Index = () => {
               { title: 'KAI Assistant', description: 'Let our robot help you resolve issues faster' },
             ].map((feature, i) => (
               <Link 
-                to={feature.title === 'Common Problems' ? '/category/office' : '#'} 
+                to={feature.title === 'Common Problems' ? '/Category' : '#'} 
                 key={i} 
                 className="p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all group cursor-pointer"
                 onClick={() => feature.title === 'KAI Assistant' && setIsChatOpen(true)}

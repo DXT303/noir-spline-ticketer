@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import SplineViewer from "@/components/SplineViewer";
+import ThreeJsWalt from "@/components/ThreeJsWalt";
 
 
 const Auth = () => {
@@ -120,7 +120,7 @@ const Auth = () => {
             <div>
               <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Welcome
+                  Please Sign in to know your identity
                 </h1>
                 <p className="text-muted-foreground">Sign in to access your tickets</p>
               </div>
@@ -267,17 +267,15 @@ const Auth = () => {
               </Tabs>
             </div>
 
- {/* Right side - Spline Robot */}
-<div className="hidden lg:block h-full min-h-[500px]">
-  <div className="relative h-full">
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
-    <div className="relative h-full rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
-      <div className="w-full h-full [&_#spline-watermark]:hidden [&_a[href*='spline']]:hidden">
-        <SplineViewer url="https://prod.spline.design/wnAQj5Qta0hVhjL9/scene.splinecode" className="w-full h-full min-h-[500px]" />
-      </div>
-    </div>
-  </div>
-</div>
+            {/* Right side - Three.js Model */}
+            <div className="hidden lg:block h-full min-h-[500px]">
+              <div className="relative h-full">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
+                <div className="relative h-full rounded-3xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+                  <ThreeJsWalt />
+                </div>
+              </div>
+            </div>
 
           </div>
         </Card>

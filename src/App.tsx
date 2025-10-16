@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Category from "./pages/Category";
 import NotFound from "./pages/NotFound";
+import AboutUs from "@/pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -18,11 +19,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/category/:categoryName" element={<Category />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/category" element={<Category />} />
+        <Route path="*" element={<NotFound />} />
+        <Route path="/about" element={<AboutUs />} />
+      
+      </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
