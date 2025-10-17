@@ -11,6 +11,7 @@ import { LogOut, Send, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRouter } from 'next/navigation';
 
 interface Ticket {
   id: string;
@@ -213,7 +214,7 @@ const Index = () => {
               <div className="flex gap-4">
                 <Button 
                   size="lg" 
-                  onClick={() => window.location.href = '/auth'}
+                   onClick={() => router.push('/auth')}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-primary/25 transition-all"
                 >
                   Get Started
