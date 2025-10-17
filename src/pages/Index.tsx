@@ -214,7 +214,7 @@ const Index = () => {
               <div className="flex gap-4">
                 <Button 
                   size="lg" 
-                   onClick={() => router.push('/auth')}
+                   onClick={() => router.push('/Auth')}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-primary/25 transition-all"
                 >
                   Get Started
