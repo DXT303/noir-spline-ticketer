@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import SplineViewer from "@/components/SplineViewer";
 import CreateTicketDialog from "@/components/CreateTicketDialog";
@@ -40,6 +40,7 @@ const Index = () => {
     { id: '1', text: "Hello! I'm your KAI assistant. How can I help you today?", sender: 'bot', timestamp: new Date() }
   ]);
   const [inputMessage, setInputMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check for existing session
@@ -141,6 +142,57 @@ const Index = () => {
     setTickets([]);
   };
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const getKaiResponse = (input: string): string => {
+    const msg = input.toLowerCase();
+
+    if (/(hello|hi|hey|good morning|good afternoon|kumusta|kamusta)/.test(msg))
+      return "Hello! I'm KAI, your BF Industries support assistant. How can I help you today?";
+
+    if (/(create|new|submit|open|mag-file|gawa).*(ticket|request|issue|problem)/.test(msg) ||
+        /(ticket|request|issue|problem).*(create|new|submit|open)/.test(msg))
+      return "To create a ticket, click the \"New Ticket\" button on your dashboard. Fill in the title, description, and priority level, then submit. Your ticket will be tracked in real-time!";
+
+    if (/(status|update|progress|track|check).*(ticket|request|issue)/.test(msg) ||
+        /(ticket|request|issue).*(status|update|progress|track|check)/.test(msg))
+      return "You can check your ticket status on the dashboard. Tickets are labeled as: 🟡 Open, 🔵 In Progress, or ✅ Closed. Use the filter buttons to sort by status.";
+
+    if (/(cancel|delete|remove|bawiin).*(ticket|request)/.test(msg))
+      return "To cancel a ticket, open the ticket card and click the cancel/delete button. Note: cancelled tickets cannot be recovered.";
+
+    if (/(priority|urgent|high|low|medium|emergency)/.test(msg))
+      return "Tickets have 3 priority levels:\n🔴 High – Critical issues needing immediate attention\n🟡 Medium – Important but not urgent\n🟢 Low – Minor issues or general inquiries";
+
+    if (/(password|login|sign in|access|account|forgot|reset)/.test(msg))
+      return "For login or password issues, go to the Auth page and use the \"Forgot Password\" option. If the problem persists, contact the IT Department directly.";
+
+    if (/(printer|print|printing|naka-print|hindi nag-print|di nag-print)/.test(msg))
+      return "For printer issues:\n1. Check if the printer is powered on and connected\n2. Restart the printer and your PC\n3. Check the print queue for stuck jobs\n4. If unresolved, create a ticket with priority set to High.";
+
+    if (/(internet|wifi|network|connection|slow|no connection|walang internet)/.test(msg))
+      return "For network/internet issues:\n1. Restart your router or switch\n2. Check if other devices are affected\n3. Contact IT if the issue is building-wide\n4. Create a ticket tagged as Network Issue.";
+
+    if (/(computer|pc|laptop|freeze|hang|slow|hindi gumagana|not working)/.test(msg))
+      return "For PC/hardware issues:\n1. Try restarting your computer\n2. Check for Windows updates\n3. If it persists, create a High priority ticket with details about the issue.";
+
+    if (/(software|app|application|install|update|program)/.test(msg))
+      return "For software requests or issues, create a ticket under the Software category. Include the app name and what you need (install, update, or troubleshoot).";
+
+    if (/(how|paano|what|ano|where|saan|when|kailan)/.test(msg))
+      return "I can help with:\n• Creating & tracking tickets\n• Printer, network, PC issues\n• Software & account problems\n\nJust describe your issue and I'll guide you!";
+
+    if (/(thank|thanks|salamat|ty|appreciate)/.test(msg))
+      return "You're welcome! 😊 If you need anything else, I'm always here. Don't forget to create a ticket if your issue needs IT attention!";
+
+    if (/(bye|goodbye|paalam|exit|close)/.test(msg))
+      return "Goodbye! Feel free to come back anytime. Have a great day! 👋";
+
+    return "I'm not sure I understood that. Could you rephrase? I can help with:\n• Creating or tracking tickets\n• Common IT issues (printer, network, PC)\n• Account & software concerns";
+  };
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
@@ -153,18 +205,18 @@ const Index = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const captured = inputMessage;
     setInputMessage("");
 
-    // Simulate bot response
     setTimeout(() => {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm here to help! I can assist you with creating tickets, checking ticket status, and answering common questions about our support system.",
+        text: getKaiResponse(captured),
         sender: 'bot',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, botMessage]);
-    }, 1000);
+    }, 800);
   };
 
   const filteredTickets = activeFilter === 'all' 
@@ -201,7 +253,7 @@ const Index = () => {
               
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient">
-                  KFL Manpower Agency
+                  BF INDUSTRIES
                 </span>
                 <br />
                 <span className="text-foreground">Ticketing System</span>
@@ -265,10 +317,10 @@ const Index = () => {
 
         {/* AI Chat Modal */}
         <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-          <DialogContent className="max-w-5xl h-[600px] p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 h-full">
+          <DialogContent className="max-w-5xl h-[600px] p-0 overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 h-[600px]">
               {/* Left side - Chat Interface */}
-              <div className="flex flex-col h-full border-r border-border">
+              <div className="flex flex-col h-[600px] border-r border-border">
                 <DialogHeader className="p-6 border-b border-border">
                   <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                     KAI Assistant
@@ -277,7 +329,7 @@ const Index = () => {
                 </DialogHeader>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
                   {messages.map((message) => (
                     <div
                       key={message.id}
@@ -319,6 +371,7 @@ const Index = () => {
                       )}
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input */}
