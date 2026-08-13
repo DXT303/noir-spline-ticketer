@@ -52,13 +52,6 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (email === 'admin@gmail.com' && password === '123123') {
-      localStorage.setItem('isAdmin', 'true');
-      navigate('/');
-      setLoading(false);
-      return;
-    }
-
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,

@@ -37,7 +37,7 @@ const ADMIN_EMAIL = 'admin@gmail.com';
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed'>('all');
@@ -51,17 +51,11 @@ const Index = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const adminSession = localStorage.getItem('isAdmin') === 'true';
-    if (adminSession) {
-      setIsAdmin(true);
-      fetchTickets('', true);
-      return;
-    }
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       if (session?.user) {
-        fetchTickets(session.user.id, false);
+        fetchTickets(session.user.id, session.user.email === ADMIN_EMAIL);
       } else {
         setLoading(false);
       }
@@ -69,8 +63,9 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       if (session?.user) {
-        fetchTickets(session.user.id, false);
+        fetchTickets(session.user.id, session.user.email === ADMIN_EMAIL);
       }
     });
 
@@ -142,14 +137,8 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
-    if (isAdmin) {
-      localStorage.removeItem('isAdmin');
-      setIsAdmin(false);
-      setTickets([]);
-      navigate('/');
-      return;
-    }
     await supabase.auth.signOut();
+    setIsAdmin(false);
     setTickets([]);
   };
 
