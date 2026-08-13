@@ -49,11 +49,15 @@ const CreateTicketDialog = ({ onTicketCreated }: CreateTicketDialogProps) => {
         return;
       }
 
+      const { data: profileData } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+
       const { error } = await supabase.from("tickets").insert({
         title,
         description,
         priority,
         user_id: user.id,
+        user_email: user.email,
+        user_name: profileData?.full_name ?? null,
       });
 
       if (error) throw error;

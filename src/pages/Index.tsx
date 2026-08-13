@@ -17,9 +17,12 @@ interface Ticket {
   id: string;
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'closed';
+  status: 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed';
   priority: 'low' | 'medium' | 'high';
   created_at: string;
+  user_email: string | null;
+  user_id: string | null;
+  user_name: string | null;
 }
 
 interface Message {
@@ -29,86 +32,96 @@ interface Message {
   timestamp: Date;
 }
 
+const ADMIN_EMAIL = 'admin@gmail.com';
+
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'in_progress' | 'closed'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed'>('all');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', text: "Hello! I'm your KAI assistant. How can I help you today?", sender: 'bot', timestamp: new Date() }
   ]);
   const [inputMessage, setInputMessage] = useState("");
+  const [undoState, setUndoState] = useState<{ id: string; prevStatus: 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed' } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check for existing session
+    const adminSession = localStorage.getItem('isAdmin') === 'true';
+    if (adminSession) {
+      setIsAdmin(true);
+      fetchTickets('', true);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchTickets();
+        fetchTickets(session.user.id, false);
       } else {
         setLoading(false);
       }
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchTickets();
+        fetchTickets(session.user.id, false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (userId: string, admin: boolean) => {
     try {
-      const { data, error } = await supabase
-        .from('tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query = supabase.from('tickets').select('*').order('created_at', { ascending: false });
+      if (!admin) query = query.eq('user_id', userId);
+      const { data, error } = await query;
 
       if (error) throw error;
       setTickets(data || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load tickets",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load tickets", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: 'open' | 'in_progress' | 'closed') => {
+  const handleStatusChange = async (id: string, newStatus: 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed') => {
     try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: newStatus })
-        .eq('id', id);
+      const prevTicket = tickets.find(t => t.id === id);
+      if (!prevTicket) return;
 
+      const { error } = await supabase.from('tickets').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
 
-      setTickets(tickets.map(ticket => 
-        ticket.id === id ? { ...ticket, status: newStatus } : ticket
-      ));
+      setTickets(tickets.map(t => t.id === id ? { ...t, status: newStatus } : t));
+      setActiveFilter(newStatus);
 
-      toast({
-        title: "Success",
-        description: "Ticket status updated",
-      });
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      setUndoState({ id, prevStatus: prevTicket.status });
+      undoTimerRef.current = setTimeout(() => setUndoState(null), 10000);
     } catch (error) {
       console.error('Error updating ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update ticket status",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update ticket status", variant: "destructive" });
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!undoState) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const { id, prevStatus } = undoState;
+    setUndoState(null);
+    const { error } = await supabase.from('tickets').update({ status: prevStatus }).eq('id', id);
+    if (!error) {
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, status: prevStatus } : t));
+      setActiveFilter(prevStatus);
     }
   };
 
@@ -120,24 +133,22 @@ const Index = () => {
         .eq('id', id);
 
       if (error) throw error;
-
       setTickets(tickets.filter(ticket => ticket.id !== id));
-
-      toast({
-        title: "Success",
-        description: "Ticket cancelled successfully",
-      });
+      toast({ title: "Success", description: "Ticket cancelled successfully" });
     } catch (error) {
       console.error('Error cancelling ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel ticket",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to cancel ticket", variant: "destructive" });
     }
   };
 
   const handleSignOut = async () => {
+    if (isAdmin) {
+      localStorage.removeItem('isAdmin');
+      setIsAdmin(false);
+      setTickets([]);
+      navigate('/');
+      return;
+    }
     await supabase.auth.signOut();
     setTickets([]);
   };
@@ -227,10 +238,12 @@ const Index = () => {
     all: tickets.length,
     open: tickets.filter(t => t.status === 'open').length,
     in_progress: tickets.filter(t => t.status === 'in_progress').length,
+    resolved: tickets.filter(t => t.status === 'resolved').length,
+    unresolved: tickets.filter(t => t.status === 'unresolved').length,
     closed: tickets.filter(t => t.status === 'closed').length,
   };
 
-  if (!user) {
+  if (!user && !isAdmin) {
     return (
       <div className="min-h-screen bg-background relative overflow-hidden">
         {/* Animated background gradients */}
@@ -417,7 +430,7 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <span className="text-sm text-muted-foreground">{isAdmin ? ADMIN_EMAIL : user?.email}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -442,8 +455,18 @@ const Index = () => {
                 <h2 className="text-3xl font-bold text-foreground mb-2">Support Tickets</h2>
                 <p className="text-muted-foreground">Manage and track all your support requests</p>
               </div>
-              <CreateTicketDialog onTicketCreated={fetchTickets} />
+              <CreateTicketDialog onTicketCreated={() => fetchTickets(user?.id ?? '', isAdmin)} />
             </div>
+
+            {/* Undo Bar */}
+            {undoState && (
+              <div className="mb-4 flex items-center justify-between px-4 py-3 bg-card border border-primary/30 rounded-xl">
+                <span className="text-sm text-muted-foreground">Status updated.</span>
+                <Button size="sm" variant="outline" onClick={handleUndo} className="border-primary/30 hover:bg-primary/10">
+                  Undo
+                </Button>
+              </div>
+            )}
 
             {/* Filters */}
             <div className="mb-8">
@@ -466,6 +489,9 @@ const Index = () => {
                     key={ticket.id}
                     {...ticket}
                     createdAt={ticket.created_at}
+                    userEmail={ticket.user_email}
+                    userName={ticket.user_name}
+                    isAdmin={isAdmin}
                     onStatusChange={handleStatusChange}
                     onCancel={handleCancelTicket}
                   />

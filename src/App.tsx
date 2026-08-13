@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Category from "./pages/Category";
 import NotFound from "./pages/NotFound";
-import AboutUs from "@/pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +21,6 @@ const App = () => (
         <Route path="/auth" element={<Auth />} />
         <Route path="/category" element={<Category />} />
         <Route path="*" element={<NotFound />} />
-        <Route path="/about" element={<AboutUs />} />
-      
       </Routes>
       </BrowserRouter>
     </TooltipProvider>

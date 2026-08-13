@@ -8,17 +8,22 @@ interface TicketCardProps {
   id: string;
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'closed';
+  status: 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed';
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
-  onStatusChange?: (id: string, newStatus: 'open' | 'in_progress' | 'closed') => void;
+  userEmail?: string | null;
+  userName?: string | null;
+  isAdmin?: boolean;
+  onStatusChange?: (id: string, newStatus: 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed') => void;
   onCancel?: (id: string) => void;
 }
 
 const statusConfig = {
   open: { label: 'Open', icon: AlertCircle, color: 'bg-primary/10 text-primary border-primary/20' },
   in_progress: { label: 'In Progress', icon: Clock, color: 'bg-secondary/10 text-secondary border-secondary/20' },
-  closed: { label: 'Closed', icon: CheckCircle2, color: 'bg-green-500/10 text-green-500 border-green-500/20' },
+  resolved: { label: 'Resolved', icon: CheckCircle2, color: 'bg-green-500/10 text-green-500 border-green-500/20' },
+  unresolved: { label: 'Unresolved', icon: AlertCircle, color: 'bg-destructive/10 text-destructive border-destructive/20' },
+  closed: { label: 'Closed', icon: CheckCircle2, color: 'bg-muted text-muted-foreground border-muted' },
 };
 
 const priorityConfig = {
@@ -27,14 +32,24 @@ const priorityConfig = {
   high: { label: 'High', color: 'bg-destructive/20 text-destructive' },
 };
 
-const TicketCard = ({ id, title, description, status, priority, createdAt, onStatusChange, onCancel }: TicketCardProps) => {
+const TicketCard = ({ id, title, description, status, priority, createdAt, userEmail, userName, isAdmin, onStatusChange, onCancel }: TicketCardProps) => {
   const StatusIcon = statusConfig[status].icon;
 
+  const nextStatusMap: Record<string, 'open' | 'in_progress' | 'resolved' | 'unresolved' | 'closed'> = {
+    open: 'in_progress',
+    in_progress: 'resolved',
+    resolved: 'closed',
+    unresolved: 'in_progress',
+  };
+
   const handleStatusChange = () => {
+    if (!onStatusChange || !nextStatusMap[status]) return;
+    onStatusChange(id, nextStatusMap[status]);
+  };
+
+  const handleUnresolved = () => {
     if (!onStatusChange) return;
-    
-    const nextStatus = status === 'open' ? 'in_progress' : status === 'in_progress' ? 'closed' : 'open';
-    onStatusChange(id, nextStatus);
+    onStatusChange(id, 'unresolved');
   };
 
   return (
@@ -43,6 +58,11 @@ const TicketCard = ({ id, title, description, status, priority, createdAt, onSta
         <div className="flex-1">
           <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
           <p className="text-sm text-muted-foreground mb-4">{description}</p>
+          {isAdmin && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Submitted by: <span className="text-foreground font-medium">{userName || userEmail || 'Unknown'}</span>
+            </p>
+          )}
         </div>
       </div>
       
@@ -61,14 +81,27 @@ const TicketCard = ({ id, title, description, status, priority, createdAt, onSta
           <span className="text-xs text-muted-foreground">
             {format(new Date(createdAt), 'MMM dd, yyyy')}
           </span>
-          {status !== 'closed' && (
-            <Button 
-              size="sm" 
-              variant="outline" 
+          {isAdmin && nextStatusMap[status] && (
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleStatusChange}
               className="border-primary/20 hover:bg-primary/10"
             >
-              Next Status
+              {status === 'open' && 'Start'}
+              {status === 'in_progress' && 'Mark Resolved'}
+              {status === 'resolved' && 'Close'}
+              {status === 'unresolved' && 'Reopen'}
+            </Button>
+          )}
+          {isAdmin && status === 'in_progress' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleUnresolved}
+              className="border-destructive/20 hover:bg-destructive/10 text-destructive"
+            >
+              Unresolved
             </Button>
           )}
         </div>
