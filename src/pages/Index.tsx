@@ -53,9 +53,14 @@ const Index = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
+      const admin = session?.user?.email === ADMIN_EMAIL;
+      setIsAdmin(admin);
+      if (admin) {
+        navigate('/admin');
+        return;
+      }
       if (session?.user) {
-        fetchTickets(session.user.id, session.user.email === ADMIN_EMAIL);
+        fetchTickets(session.user.id, false);
       } else {
         setLoading(false);
       }
@@ -63,9 +68,14 @@ const Index = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
+      const admin = session?.user?.email === ADMIN_EMAIL;
+      setIsAdmin(admin);
+      if (admin) {
+        navigate('/admin');
+        return;
+      }
       if (session?.user) {
-        fetchTickets(session.user.id, session.user.email === ADMIN_EMAIL);
+        fetchTickets(session.user.id, false);
       }
     });
 

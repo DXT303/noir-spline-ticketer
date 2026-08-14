@@ -19,14 +19,23 @@ export type Database = {
           id: string
           role: string
           created_at: string
+          full_name: string | null
+          department: string | null
+          designated_area: string | null
         }
         Insert: {
           id: string
           role?: string
           created_at?: string
+          full_name?: string | null
+          department?: string | null
+          designated_area?: string | null
         }
         Update: {
           role?: string
+          full_name?: string | null
+          department?: string | null
+          designated_area?: string | null
         }
         Relationships: []
       }
